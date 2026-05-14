@@ -130,22 +130,36 @@ FROM `PROJECT.fitnesssyncer.source_items`
 GROUP BY source_type
 ORDER BY items DESC;
 
--- Recent activities with type-specific fields
-SELECT
-  date_utc,
-  JSON_VALUE(extra, '$.activityType') AS activity,
-  CAST(JSON_VALUE(extra, '$.duration') AS FLOAT64) AS duration_s,
-  CAST(JSON_VALUE(extra, '$.distance') AS FLOAT64) AS distance_m
+-- Inspect available fields for a type
+SELECT extra
 FROM `PROJECT.fitnesssyncer.source_items`
 WHERE source_type = 'Activity'
 ORDER BY date_utc DESC
-LIMIT 50;
+LIMIT 1;
+
+-- Sleep stages per night (minutes), per source
+SELECT
+  DATE(TIMESTAMP_MILLIS(CAST(JSON_VALUE(s.extra, '$.bedTime') AS INT64))) AS night,
+  st.source_name,
+  ROUND(CAST(JSON_VALUE(s.extra, '$.lightSleepMinutes') AS FLOAT64), 1) AS light_min,
+  ROUND(CAST(JSON_VALUE(s.extra, '$.deepSleepMinutes')  AS FLOAT64), 1) AS deep_min,
+  ROUND(CAST(JSON_VALUE(s.extra, '$.remSleepMinutes')   AS FLOAT64), 1) AS rem_min,
+  ROUND(CAST(JSON_VALUE(s.extra, '$.awakeMinutes')      AS FLOAT64), 1) AS awake_min,
+  ROUND(
+    CAST(JSON_VALUE(s.extra, '$.lightSleepMinutes') AS FLOAT64)
+    + CAST(JSON_VALUE(s.extra, '$.deepSleepMinutes') AS FLOAT64)
+    + CAST(JSON_VALUE(s.extra, '$.remSleepMinutes')  AS FLOAT64), 1
+  ) AS total_sleep_min
+FROM `PROJECT.fitnesssyncer.source_items` AS s
+LEFT JOIN `PROJECT.fitnesssyncer._sync_state` AS st ON s.source_id = st.source_id
+WHERE s.source_type = 'Sleep'
+ORDER BY night DESC, st.source_name;
 
 -- Sync state per source
 SELECT source_name, source_type,
        TIMESTAMP_MILLIS(last_synced_ms) AS last_synced,
        updated_at
-FROM `PROJECT.fitnesssyncer.sync_state`
+FROM `PROJECT.fitnesssyncer._sync_state`
 ORDER BY updated_at DESC;
 ```
 

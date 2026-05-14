@@ -1,4 +1,3 @@
-import json
 from datetime import datetime, timezone
 
 KNOWN_FIELDS = {"itemId", "date", "links"}
@@ -14,7 +13,7 @@ def to_bq_row(item: dict, source: dict, synced_at: datetime) -> dict:
         "source_type": source.get("type", ""),
         "date_utc": _ms_to_iso(date_ms) if date_ms is not None else None,
         "date_ms": date_ms,
-        "extra": json.dumps(extra),
+        "extra": extra,
         "synced_at": synced_at.isoformat(),
     }
 
