@@ -1,0 +1,43 @@
+name: FitnessSyncer ETL
+
+on:
+  schedule:
+    - cron: "0 6 * * *"   # daily at 06:00 UTC
+  workflow_dispatch:        # manual trigger from GitHub UI
+
+jobs:
+  etl:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write       # required for Workload Identity Federation
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Authenticate to GCP
+        uses: google-github-actions/auth@v2
+        with:
+          # Option A (recommended): Workload Identity Federation — no long-lived key
+          workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+          # Option B: SA key JSON — uncomment and remove the two lines above if using key
+          # credentials_json: ${{ secrets.GCP_CREDENTIALS_JSON }}
+
+      - name: Run ETL
+        env:
+          FITNESSSYNCER_CLIENT_ID: ${{ secrets.FITNESSSYNCER_CLIENT_ID }}
+          FITNESSSYNCER_CLIENT_SECRET: ${{ secrets.FITNESSSYNCER_CLIENT_SECRET }}
+          GCS_TOKEN_BUCKET: ${{ secrets.GCS_TOKEN_BUCKET }}
+          GCS_TOKEN_OBJECT: fitnesssyncer_refresh_token.txt
+          GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+          BQ_DATASET: ${{ vars.BQ_DATASET }}
+        run: python src/main.py
