@@ -8,10 +8,6 @@ on:
 jobs:
   etl:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      id-token: write       # required for Workload Identity Federation
-
     steps:
       - uses: actions/checkout@v4
 
@@ -26,11 +22,7 @@ jobs:
       - name: Authenticate to GCP
         uses: google-github-actions/auth@v2
         with:
-          # Option A (recommended): Workload Identity Federation — no long-lived key
-          workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER }}
-          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
-          # Option B: SA key JSON — uncomment and remove the two lines above if using key
-          # credentials_json: ${{ secrets.GCP_CREDENTIALS_JSON }}
+          credentials_json: ${{ secrets.GCP_CREDENTIALS_JSON }}
 
       - name: Run ETL
         env:
