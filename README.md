@@ -48,6 +48,7 @@ The FitnessSyncer refresh token rotates on every use. To make this work in CI, t
 - A GCP project with billing enabled
 - A GCS bucket (for storing the refresh token)
 - Python 3.11+
+- [uv](https://docs.astral.sh/uv/) (`curl -LsSf https://astral.sh/uv/install.sh | sh`)
 
 ### 1. Register a FitnessSyncer OAuth app
 
@@ -89,9 +90,8 @@ gcloud iam service-accounts keys create sa-key.json --iam-account=$SA_EMAIL
 git clone https://github.com/chrisadas/fitnesssyncer-bigquery-etl
 cd fitnesssyncer-bigquery-etl
 
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
+uv venv && source .venv/bin/activate
+uv pip install -r requirements.txt
 
 cp .env.example .env
 # Edit .env: fill in CLIENT_ID, CLIENT_SECRET, GCS_TOKEN_BUCKET, GCP_PROJECT_ID
